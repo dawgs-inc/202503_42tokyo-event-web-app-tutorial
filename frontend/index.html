@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="ja">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
@@ -7,7 +7,24 @@
     <title>カレンダーアプリ</title>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <div class="todo-app">
+        <h1>カレンダーアプリ</h1>
+        
+        <div class="todo-input">
+          <input type="date" id="task-date">
+          <input type="text" id="new-task" placeholder="新しいタスクを入力">
+          <button id="add-task">追加</button>
+        </div>
+        
+        <div class="calendar-view">
+          <h2>予定一覧</h2>
+          <ul id="tasks-list" class="tasks-list">
+            <!-- タスクはここに追加されます -->
+          </ul>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

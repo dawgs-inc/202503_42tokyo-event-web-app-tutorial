@@ -1,27 +1,5 @@
 import './style.css'
 
-document.querySelector('#app').innerHTML = `
-  <div class="todo-app">
-    <h1>カレンダーアプリ</h1>
-    
-    <div class="todo-input">
-      <input type="date" id="task-date" value="${new Date().toISOString().split('T')[0]}">
-      <input type="text" id="new-task" placeholder="新しいタスクを入力">
-      <button id="add-task">追加</button>
-    </div>
-    
-    <div class="calendar-view">
-      <h2>予定一覧</h2>
-      <ul id="tasks-list" class="tasks-list">
-        <!-- タスクはここに追加されます -->
-      </ul>
-    </div>
-  </div>
-`
-
-// タスク追加ボタンのクリックイベント
-document.getElementById('add-task').addEventListener('click', addTask);
-
 // タスク追加関数
 function addTask() {
   const taskInput = document.getElementById('new-task');
@@ -135,3 +113,11 @@ function insertTaskInOrder(tasksList, newTaskItem, newTaskDate) {
     tasksList.appendChild(newTaskItem);
   }
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+  const dateInput = document.getElementById('task-date');
+  dateInput.value = new Date().toISOString().split('T')[0];
+  
+  // タスク追加ボタンのクリックイベント
+  document.getElementById('add-task').addEventListener('click', addTask);
+});
