@@ -12,9 +12,19 @@
         <h1>カレンダーアプリ</h1>
         
         <div class="todo-input">
-          <input type="date" id="task-date">
-          <input type="text" id="new-task" placeholder="新しいタスクを入力">
-          <button id="add-task">追加</button>
+          <div class="input-group">
+            <label for="task-date">日付</label>
+            <input type="date" id="task-date">
+          </div>
+          <div class="input-group">
+            <label for="new-task">タイトル</label>
+            <input type="text" id="new-task" placeholder="タスクのタイトルを入力">
+          </div>
+          <div class="input-group">
+            <label for="task-memo">メモ</label>
+            <input type="text" id="task-memo" placeholder="詳細メモを入力（任意）">
+          </div>
+          <button id="add-task">タスクを追加</button>
         </div>
         
         <div class="calendar-view">

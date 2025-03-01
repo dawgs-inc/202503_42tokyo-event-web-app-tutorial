@@ -3,11 +3,13 @@ import './style.css'
 // タスク追加関数
 function addTask() {
   const taskInput = document.getElementById('new-task');
+  const memoInput = document.getElementById('task-memo');
   const dateInput = document.getElementById('task-date');
-  const taskText = taskInput.value.trim();
+  const taskTitle = taskInput.value.trim();
+  const taskMemo = memoInput.value.trim();
   const taskDate = dateInput.value;
   
-  if (taskText && taskDate) {
+  if (taskTitle && taskDate) {
     // タスクリストの取得
     const tasksList = document.getElementById('tasks-list');
     
@@ -28,10 +30,19 @@ function addTask() {
     checkbox.type = 'checkbox';
     checkbox.className = 'task-checkbox';
     
-    // タスクテキストを作成
-    const taskContent = document.createElement('span');
-    taskContent.textContent = taskText;
-    taskContent.className = 'task-text';
+    // タスクコンテンツコンテナを作成
+    const taskContent = document.createElement('div');
+    taskContent.className = 'task-content';
+    
+    // タスクタイトルを作成
+    const taskTitleElement = document.createElement('div');
+    taskTitleElement.textContent = taskTitle;
+    taskTitleElement.className = 'task-title';
+    
+    // タスクメモを作成（メモがある場合のみ）
+    const taskMemoElement = document.createElement('div');
+    taskMemoElement.className = 'task-memo';
+    taskMemoElement.textContent = taskMemo || ''; // メモが空の場合は空文字列を設定
     
     // 削除ボタンを作成
     const deleteButton = document.createElement('button');
@@ -41,9 +52,11 @@ function addTask() {
     // チェックボックスのイベント
     checkbox.addEventListener('change', function() {
       if (this.checked) {
-        taskContent.classList.add('completed');
+        taskTitleElement.classList.add('completed');
+        taskMemoElement.classList.add('completed');
       } else {
-        taskContent.classList.remove('completed');
+        taskTitleElement.classList.remove('completed');
+        taskMemoElement.classList.remove('completed');
       }
     });
     
@@ -51,6 +64,12 @@ function addTask() {
     deleteButton.addEventListener('click', function() {
       taskItem.remove();
     });
+    
+    // タスクコンテンツを組み立て
+    taskContent.appendChild(taskTitleElement);
+    if (taskMemo) {
+      taskContent.appendChild(taskMemoElement);
+    }
     
     // 要素を組み立てて追加
     taskItem.appendChild(dateDisplay);
@@ -63,6 +82,7 @@ function addTask() {
     
     // 入力フィールドをクリア
     taskInput.value = '';
+    memoInput.value = '';
   }
 }
 
@@ -120,4 +140,17 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // タスク追加ボタンのクリックイベント
   document.getElementById('add-task').addEventListener('click', addTask);
+  
+  // Enterキーでもタスク追加できるようにする
+  document.getElementById('new-task').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+      addTask();
+    }
+  });
+  
+  document.getElementById('task-memo').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+      addTask();
+    }
+  });
 });
