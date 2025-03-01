@@ -168,27 +168,3 @@ button:hover {
 .delete-button:hover {
   background-color: #c0392b;
 }
-
-/* レスポンシブ対応 */
-@media (max-width: 500px) {
-  .todo-input {
-    padding: 10px;
-  }
-  
-  .task-item {
-    flex-wrap: wrap;
-  }
-  
-  .task-date {
-    width: 100%;
-    border-right: none;
-    border-bottom: 1px solid #eee;
-    margin-bottom: 5px;
-    padding-bottom: 5px;
-  }
-  
-  .task-content {
-    width: 100%;
-    margin-bottom: 10px;
-  }
-}
