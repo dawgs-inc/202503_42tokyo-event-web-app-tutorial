@@ -140,17 +140,4 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // タスク追加ボタンのクリックイベント
   document.getElementById('add-task').addEventListener('click', addTask);
-  
-  // Enterキーでもタスク追加できるようにする
-  document.getElementById('new-task').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-      addTask();
-    }
-  });
-  
-  document.getElementById('task-memo').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-      addTask();
-    }
-  });
 });
