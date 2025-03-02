@@ -1,7 +1,10 @@
 import './style.css'
 
+// API接続用の定数
+const API_URL = import.meta.env.VITE_SERVER_URL;
+
 // スケジュール追加関数
-function addSchedule() {
+async function addSchedule() {
   const scheduleInput = document.getElementById('new-schedule');
   const memoInput = document.getElementById('schedule-memo');
   const dateInput = document.getElementById('schedule-date');
@@ -10,17 +13,85 @@ function addSchedule() {
   const scheduleDate = dateInput.value;
   
   if (scheduleTitle && scheduleDate) {
-    // スケジュールリストの取得
+    try {
+      // APIにスケジュールを追加
+      const response = await fetch(`${API_URL}/events`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: scheduleTitle,
+          memo: scheduleMemo,
+          event_date: scheduleDate
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('スケジュールの追加に失敗しました');
+      }
+
+      // スケジュール一覧を再読み込み
+      await loadSchedules();
+      
+      // 入力フィールドをクリア
+      clearInputFields(scheduleInput, memoInput);
+    } catch (error) {
+      console.error('エラー:', error);
+      alert('スケジュールの追加に失敗しました: ' + error.message);
+    }
+  }
+}
+
+// スケジュール削除関数
+async function deleteSchedule(id) {
+  try {
+    const response = await fetch(`${API_URL}/events/${id}`, {
+      method: 'DELETE'
+    });
+
+    if (!response.ok) {
+      throw new Error('スケジュールの削除に失敗しました');
+    }
+
+    // スケジュール一覧を再読み込み
+    await loadSchedules();
+  } catch (error) {
+    console.error('エラー:', error);
+    alert('スケジュールの削除に失敗しました: ' + error.message);
+  }
+}
+
+// スケジュール一覧を読み込む関数
+async function loadSchedules() {
+  try {
+    const response = await fetch(`${API_URL}/events`);
+    if (!response.ok) {
+      throw new Error('スケジュールの取得に失敗しました');
+    }
+
+    const events = await response.json();
+    
+    // スケジュールリストをクリア
     const schedulesList = document.getElementById('schedules-list');
+    schedulesList.innerHTML = '';
     
-    // 新しいスケジュール項目を作成
-    const scheduleItem = createScheduleItem(scheduleTitle, scheduleMemo, scheduleDate);
+    // 日付でソート
+    events.sort((a, b) => new Date(a.event_date) - new Date(b.event_date));
     
-    // 日付順に並べるために適切な位置に挿入
-    insertScheduleInOrder(schedulesList, scheduleItem, scheduleDate);
-    
-    // 入力フィールドをクリア
-    clearInputFields(scheduleInput, memoInput);
+    // スケジュールを表示
+    events.forEach(event => {
+      const scheduleItem = createScheduleItem(
+        event.title, 
+        event.memo, 
+        event.event_date,
+        event.id
+      );
+      schedulesList.appendChild(scheduleItem);
+    });
+  } catch (error) {
+    console.error('エラー:', error);
+    alert('スケジュールの取得に失敗しました: ' + error.message);
   }
 }
 
@@ -31,9 +102,10 @@ function clearInputFields(titleInput, memoInput) {
 }
 
 // スケジュール項目を作成する関数
-function createScheduleItem(title, memo, date) {
+function createScheduleItem(title, memo, date, id) {
   const scheduleItem = document.createElement('li');
   scheduleItem.className = 'schedule-item';
+  scheduleItem.dataset.id = id;
   
   // 日付をフォーマット
   const formattedDate = formatDate(date);
@@ -54,7 +126,7 @@ function createScheduleItem(title, memo, date) {
   // 削除ボタンのイベントリスナーを追加
   const deleteButton = scheduleItem.querySelector('.delete-button');
   deleteButton.addEventListener('click', function() {
-    scheduleItem.remove();
+    deleteSchedule(id);
   });
   
   return scheduleItem;
@@ -70,44 +142,6 @@ function formatDate(dateString) {
   return `${year}年${month}月${day}日`;
 }
 
-// 日付順にスケジュールを挿入する関数
-function insertScheduleInOrder(schedulesList, newScheduleItem, newScheduleDate) {
-  const items = schedulesList.children;
-  let inserted = false;
-  
-  // 日付を比較して適切な位置に挿入
-  for (let i = 0; i < items.length; i++) {
-    const itemDateElement = items[i].querySelector('.schedule-date');
-    if (itemDateElement) {
-      const itemDateText = itemDateElement.textContent;
-      // 日本語形式の日付から年月日を抽出
-      const yearMatch = itemDateText.match(/(\d+)年/);
-      const monthMatch = itemDateText.match(/(\d+)月/);
-      const dayMatch = itemDateText.match(/(\d+)日/);
-      
-      if (yearMatch && monthMatch && dayMatch) {
-        const year = parseInt(yearMatch[1]);
-        const month = parseInt(monthMatch[1]) - 1; // JavaScriptの月は0始まり
-        const day = parseInt(dayMatch[1]);
-        
-        const itemDate = new Date(year, month, day);
-        const newDate = new Date(newScheduleDate);
-        
-        if (newDate < itemDate) {
-          schedulesList.insertBefore(newScheduleItem, items[i]);
-          inserted = true;
-          break;
-        }
-      }
-    }
-  }
-  
-  // リストの最後に追加
-  if (!inserted) {
-    schedulesList.appendChild(newScheduleItem);
-  }
-}
-
 // アプリの初期化関数
 function initializeApp() {
   // 今日の日付を初期値として設定
@@ -116,6 +150,9 @@ function initializeApp() {
   
   // スケジュール追加ボタンのクリックイベント
   document.getElementById('add-schedule').addEventListener('click', addSchedule);
+  
+  // 初期データの読み込み
+  loadSchedules();
 }
 
 document.addEventListener('DOMContentLoaded', function() {
