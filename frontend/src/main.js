@@ -3,7 +3,7 @@ import './style.css'
 // API接続用の定数
 const API_URL = import.meta.env.VITE_SERVER_URL;
 
-// グローバル変数
+// 編集中のイベントのID
 let editingEventId = null;
 
 // スケジュール追加/更新関数
