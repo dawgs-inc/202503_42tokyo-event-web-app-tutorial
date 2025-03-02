@@ -14,59 +14,50 @@ function addSchedule() {
     const schedulesList = document.getElementById('schedules-list');
     
     // 新しいスケジュール項目を作成
-    const scheduleItem = document.createElement('li');
-    scheduleItem.className = 'schedule-item';
-    
-    // 日付表示を作成
-    const dateDisplay = document.createElement('div');
-    dateDisplay.className = 'schedule-date';
-    
-    // 日付をフォーマット (YYYY-MM-DD → YYYY年MM月DD日)
-    const formattedDate = formatDate(scheduleDate);
-    dateDisplay.textContent = formattedDate;
-    
-    // スケジュールコンテンツコンテナを作成
-    const scheduleContent = document.createElement('div');
-    scheduleContent.className = 'schedule-content';
-    
-    // スケジュールタイトルを作成
-    const scheduleTitleElement = document.createElement('div');
-    scheduleTitleElement.textContent = scheduleTitle;
-    scheduleTitleElement.className = 'schedule-title';
-    
-    // スケジュールメモを作成（メモがある場合のみ）
-    const scheduleMemoElement = document.createElement('div');
-    scheduleMemoElement.className = 'schedule-memo';
-    scheduleMemoElement.textContent = scheduleMemo || ''; // メモが空の場合は空文字列を設定
-    
-    // 削除ボタンを作成
-    const deleteButton = document.createElement('button');
-    deleteButton.textContent = '削除';
-    deleteButton.className = 'delete-button';
-    
-    // 削除ボタンのイベント
-    deleteButton.addEventListener('click', function() {
-      scheduleItem.remove();
-    });
-    
-    // スケジュールコンテンツを組み立て
-    scheduleContent.appendChild(scheduleTitleElement);
-    if (scheduleMemo) {
-      scheduleContent.appendChild(scheduleMemoElement);
-    }
-    
-    // 要素を組み立てて追加
-    scheduleItem.appendChild(dateDisplay);
-    scheduleItem.appendChild(scheduleContent);
-    scheduleItem.appendChild(deleteButton);
+    const scheduleItem = createScheduleItem(scheduleTitle, scheduleMemo, scheduleDate);
     
     // 日付順に並べるために適切な位置に挿入
     insertScheduleInOrder(schedulesList, scheduleItem, scheduleDate);
     
     // 入力フィールドをクリア
-    scheduleInput.value = '';
-    memoInput.value = '';
+    clearInputFields(scheduleInput, memoInput);
   }
+}
+
+// 入力フィールドをクリアする関数
+function clearInputFields(titleInput, memoInput) {
+  titleInput.value = '';
+  memoInput.value = '';
+}
+
+// スケジュール項目を作成する関数
+function createScheduleItem(title, memo, date) {
+  const scheduleItem = document.createElement('li');
+  scheduleItem.className = 'schedule-item';
+  
+  // 日付をフォーマット
+  const formattedDate = formatDate(date);
+  
+  // メモ部分のHTML（メモがある場合のみ表示）
+  const memoHtml = memo ? `<div class="schedule-memo">${memo}</div>` : '';
+  
+  // HTMLテンプレートを使用して要素を作成
+  scheduleItem.innerHTML = `
+    <div class="schedule-date">${formattedDate}</div>
+    <div class="schedule-content">
+      <div class="schedule-title">${title}</div>
+      ${memoHtml}
+    </div>
+    <button class="delete-button">削除</button>
+  `;
+  
+  // 削除ボタンのイベントリスナーを追加
+  const deleteButton = scheduleItem.querySelector('.delete-button');
+  deleteButton.addEventListener('click', function() {
+    scheduleItem.remove();
+  });
+  
+  return scheduleItem;
 }
 
 // 日付のフォーマット関数 (YYYY-MM-DD → YYYY年MM月DD日)
@@ -117,10 +108,17 @@ function insertScheduleInOrder(schedulesList, newScheduleItem, newScheduleDate) 
   }
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+// アプリの初期化関数
+function initializeApp() {
+  // 今日の日付を初期値として設定
   const dateInput = document.getElementById('schedule-date');
   dateInput.value = new Date().toISOString().split('T')[0];
   
   // スケジュール追加ボタンのクリックイベント
   document.getElementById('add-schedule').addEventListener('click', addSchedule);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  // 初期化処理
+  initializeApp();
 });
