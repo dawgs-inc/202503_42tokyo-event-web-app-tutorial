@@ -2,85 +2,50 @@
   <div class="schedule-app">
     <h1>カレンダーアプリ</h1>
     
-    <div class="schedule-input">
-      <div class="input-group">
-        <label for="schedule-date">日付</label>
-        <input type="date" id="schedule-date" v-model="newSchedule.event_date">
-      </div>
-      <div class="input-group">
-        <label for="new-schedule">タイトル</label>
-        <input 
-          type="text" 
-          id="new-schedule" 
-          placeholder="スケジュールのタイトルを入力" 
-          v-model="newSchedule.title"
-        >
-      </div>
-      <div class="input-group">
-        <label for="schedule-memo">メモ</label>
-        <input 
-          type="text" 
-          id="schedule-memo" 
-          placeholder="詳細メモを入力（任意）" 
-          v-model="newSchedule.memo"
-        >
-      </div>
-      <button @click="addOrUpdateSchedule">{{ isEditing ? 'スケジュールを更新' : 'スケジュールを追加' }}</button>
-      <button v-if="isEditing" class="cancel-button" @click="exitEditMode">編集をキャンセル</button>
-    </div>
+    <ScheduleForm 
+      :editing-schedule="editingSchedule"
+      :is-editing="isEditing"
+      @submit-schedule="addOrUpdateSchedule"
+      @cancel-edit="exitEditMode"
+      ref="scheduleForm"
+    />
     
-    <div class="calendar-view">
-      <h2>予定一覧</h2>
-      <ul class="schedules-list">
-        <li 
-          v-for="schedule in sortedSchedules" 
-          :key="schedule.id" 
-          class="schedule-item"
-          :data-id="schedule.id"
-        >
-          <div class="schedule-date">{{ formatDate(schedule.event_date) }}</div>
-          <div class="schedule-content">
-            <div class="schedule-title">{{ schedule.title }}</div>
-            <div v-if="schedule.memo" class="schedule-memo">{{ schedule.memo }}</div>
-          </div>
-          <div class="schedule-actions">
-            <button class="edit-button" @click="enterEditMode(schedule)">編集</button>
-            <button class="delete-button" @click="deleteSchedule(schedule.id)">削除</button>
-          </div>
-        </li>
-      </ul>
-    </div>
+    <ScheduleList 
+      :schedules="schedules"
+      @edit="enterEditMode"
+      @delete="deleteSchedule"
+    />
   </div>
 </template>
 
 <script>
+import ScheduleForm from './components/ScheduleForm.vue';
+import ScheduleList from './components/ScheduleList.vue';
+
 export default {
+  components: {
+    ScheduleForm,
+    ScheduleList
+  },
+  
   data() {
     return {
       API_URL: import.meta.env.VITE_SERVER_URL,
       schedules: [],
-      newSchedule: {
-        title: '',
-        memo: '',
-        event_date: new Date().toISOString().split('T')[0]
-      },
-      editingEventId: null
+      editingEventId: null,
+      editingSchedule: null
     }
   },
   
   computed: {
     isEditing() {
       return this.editingEventId !== null;
-    },
-    
-    sortedSchedules() {
-      return [...this.schedules].sort((a, b) => new Date(a.event_date) - new Date(b.event_date));
     }
   },
   
   methods: {
-    async addOrUpdateSchedule() {
-      const { title, memo, event_date } = this.newSchedule;
+    async addOrUpdateSchedule(scheduleData) {
+      const { title, memo, event_date } = scheduleData;
       
       if (title && event_date) {
         try {
@@ -93,6 +58,9 @@ export default {
             method = 'PUT';
           }
           
+          // Ensure date is in YYYY-MM-DD format
+          const formattedDate = event_date.split('T')[0];
+          
           // APIにスケジュールを追加/更新
           const response = await fetch(url, {
             method: method,
@@ -102,13 +70,16 @@ export default {
             body: JSON.stringify({
               title,
               memo,
-              event_date
+              event_date: formattedDate
             })
           });
 
           if (!response.ok) {
             throw new Error(this.editingEventId ? 'スケジュールの更新に失敗しました' : 'スケジュールの追加に失敗しました');
           }
+
+          // 入力欄をリセット（追加・更新どちらの場合も）
+          this.$refs.scheduleForm.resetForm();
 
           // 編集モードを解除
           if (this.editingEventId) {
@@ -117,9 +88,6 @@ export default {
 
           // スケジュール一覧を再読み込み
           await this.loadSchedules();
-          
-          // 入力フィールドをクリア
-          this.clearInputFields();
         } catch (error) {
           console.error('エラー:', error);
           alert((this.editingEventId ? 'スケジュールの更新' : 'スケジュールの追加') + 'に失敗しました: ' + error.message);
@@ -128,18 +96,19 @@ export default {
     },
     
     enterEditMode(schedule) {
-      this.editingEventId = schedule.id;
-      this.newSchedule = {
-        title: schedule.title,
-        memo: schedule.memo || '',
-        event_date: schedule.event_date
+      // Ensure we're working with a clean date format
+      const cleanSchedule = {
+        ...schedule,
+        event_date: schedule.event_date.split('T')[0]
       };
+      
+      this.editingEventId = schedule.id;
+      this.editingSchedule = cleanSchedule;
     },
     
     exitEditMode() {
       this.editingEventId = null;
-      this.clearInputFields();
-      this.newSchedule.event_date = new Date().toISOString().split('T')[0];
+      this.editingSchedule = null;
     },
     
     async deleteSchedule(id) {
@@ -172,25 +141,17 @@ export default {
           throw new Error('スケジュールの取得に失敗しました');
         }
 
-        this.schedules = await response.json();
+        const data = await response.json();
+        
+        // Ensure all dates are properly formatted
+        this.schedules = data.map(schedule => ({
+          ...schedule,
+          event_date: schedule.event_date.split('T')[0]
+        }));
       } catch (error) {
         console.error('エラー:', error);
         alert('スケジュールの取得に失敗しました: ' + error.message);
       }
-    },
-    
-    clearInputFields() {
-      this.newSchedule.title = '';
-      this.newSchedule.memo = '';
-    },
-    
-    formatDate(dateString) {
-      const date = new Date(dateString);
-      const year = date.getFullYear();
-      const month = date.getMonth() + 1;
-      const day = date.getDate();
-      
-      return `${year}年${month}月${day}日`;
     }
   },
   
@@ -199,7 +160,3 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-/* スタイルはグローバルCSSを使用するため、ここでは定義しません */
-</style>
