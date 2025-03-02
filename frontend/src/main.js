@@ -1,7 +1,13 @@
 import './style.css'
 
-// スケジュール追加関数
-function addSchedule() {
+// API接続用の定数
+const API_URL = import.meta.env.VITE_SERVER_URL;
+
+// 編集中のイベントのID
+let editingEventId = null;
+
+// スケジュール追加/更新関数
+async function addOrUpdateSchedule() {
   const scheduleInput = document.getElementById('new-schedule');
   const memoInput = document.getElementById('schedule-memo');
   const dateInput = document.getElementById('schedule-date');
@@ -10,17 +16,177 @@ function addSchedule() {
   const scheduleDate = dateInput.value;
   
   if (scheduleTitle && scheduleDate) {
-    // スケジュールリストの取得
+    try {
+      let url = `${API_URL}/events`;
+      let method = 'POST';
+      
+      // 編集モードの場合
+      if (editingEventId) {
+        url = `${API_URL}/events/${editingEventId}`;
+        method = 'PUT';
+      }
+      
+      // APIにスケジュールを追加/更新
+      const response = await fetch(url, {
+        method: method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: scheduleTitle,
+          memo: scheduleMemo,
+          event_date: scheduleDate
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(editingEventId ? 'スケジュールの更新に失敗しました' : 'スケジュールの追加に失敗しました');
+      }
+
+      // 編集モードを解除
+      if (editingEventId) {
+        exitEditMode();
+      }
+
+      // スケジュール一覧を再読み込み
+      await loadSchedules();
+      
+      // 入力フィールドをクリア
+      clearInputFields(scheduleInput, memoInput);
+    } catch (error) {
+      console.error('エラー:', error);
+      alert((editingEventId ? 'スケジュールの更新' : 'スケジュールの追加') + 'に失敗しました: ' + error.message);
+    }
+  }
+}
+
+// 編集モードに入る関数
+function enterEditMode(event) {
+  const scheduleItem = event.target.closest('.schedule-item');
+  if (!scheduleItem) return;
+  
+  const id = scheduleItem.dataset.id;
+  const title = scheduleItem.querySelector('.schedule-title').textContent;
+  const memo = scheduleItem.querySelector('.schedule-memo')?.textContent || '';
+  const dateText = scheduleItem.querySelector('.schedule-date').textContent;
+  
+  // 日本語形式の日付からYYYY-MM-DD形式に変換
+  const yearMatch = dateText.match(/(\d+)年/);
+  const monthMatch = dateText.match(/(\d+)月/);
+  const dayMatch = dateText.match(/(\d+)日/);
+  
+  if (yearMatch && monthMatch && dayMatch) {
+    const year = parseInt(yearMatch[1]);
+    const month = parseInt(monthMatch[1]).toString().padStart(2, '0');
+    const day = parseInt(dayMatch[1]).toString().padStart(2, '0');
+    const formattedDate = `${year}-${month}-${day}`;
+    
+    // フォームに値をセット
+    document.getElementById('new-schedule').value = title;
+    document.getElementById('schedule-memo').value = memo;
+    document.getElementById('schedule-date').value = formattedDate;
+    
+    // 編集モードに切り替え
+    editingEventId = id;
+    const addButton = document.getElementById('add-schedule');
+    addButton.textContent = 'スケジュールを更新';
+    
+    // キャンセルボタンを表示
+    const cancelButton = document.createElement('button');
+    cancelButton.id = 'cancel-edit';
+    cancelButton.textContent = '編集をキャンセル';
+    cancelButton.className = 'cancel-button';
+    cancelButton.addEventListener('click', exitEditMode);
+    
+    const scheduleInput = document.querySelector('.schedule-input');
+    if (!document.getElementById('cancel-edit')) {
+      scheduleInput.appendChild(cancelButton);
+    }
+    
+    // フォームにフォーカス
+    document.getElementById('new-schedule').focus();
+  }
+}
+
+// 編集モードを終了する関数
+function exitEditMode() {
+  // 編集モードをリセット
+  editingEventId = null;
+  
+  // ボタンテキストを戻す
+  const addButton = document.getElementById('add-schedule');
+  addButton.textContent = 'スケジュールを追加';
+  
+  // キャンセルボタンを削除
+  const cancelButton = document.getElementById('cancel-edit');
+  if (cancelButton) {
+    cancelButton.remove();
+  }
+  
+  // フォームをクリア
+  clearInputFields(
+    document.getElementById('new-schedule'), 
+    document.getElementById('schedule-memo')
+  );
+  
+  // 今日の日付に戻す
+  document.getElementById('schedule-date').value = new Date().toISOString().split('T')[0];
+}
+
+// スケジュール削除関数
+async function deleteSchedule(id) {
+  try {
+    const response = await fetch(`${API_URL}/events/${id}`, {
+      method: 'DELETE'
+    });
+
+    if (!response.ok) {
+      throw new Error('スケジュールの削除に失敗しました');
+    }
+
+    // 編集中のイベントが削除された場合、編集モードを解除
+    if (editingEventId === id) {
+      exitEditMode();
+    }
+
+    // スケジュール一覧を再読み込み
+    await loadSchedules();
+  } catch (error) {
+    console.error('エラー:', error);
+    alert('スケジュールの削除に失敗しました: ' + error.message);
+  }
+}
+
+// スケジュール一覧を読み込む関数
+async function loadSchedules() {
+  try {
+    const response = await fetch(`${API_URL}/events`);
+    if (!response.ok) {
+      throw new Error('スケジュールの取得に失敗しました');
+    }
+
+    const events = await response.json();
+    
+    // スケジュールリストをクリア
     const schedulesList = document.getElementById('schedules-list');
+    schedulesList.innerHTML = '';
     
-    // 新しいスケジュール項目を作成
-    const scheduleItem = createScheduleItem(scheduleTitle, scheduleMemo, scheduleDate);
+    // 日付でソート
+    events.sort((a, b) => new Date(a.event_date) - new Date(b.event_date));
     
-    // 日付順に並べるために適切な位置に挿入
-    insertScheduleInOrder(schedulesList, scheduleItem, scheduleDate);
-    
-    // 入力フィールドをクリア
-    clearInputFields(scheduleInput, memoInput);
+    // スケジュールを表示
+    events.forEach(event => {
+      const scheduleItem = createScheduleItem(
+        event.title, 
+        event.memo, 
+        event.event_date,
+        event.id
+      );
+      schedulesList.appendChild(scheduleItem);
+    });
+  } catch (error) {
+    console.error('エラー:', error);
+    alert('スケジュールの取得に失敗しました: ' + error.message);
   }
 }
 
@@ -31,9 +197,10 @@ function clearInputFields(titleInput, memoInput) {
 }
 
 // スケジュール項目を作成する関数
-function createScheduleItem(title, memo, date) {
+function createScheduleItem(title, memo, date, id) {
   const scheduleItem = document.createElement('li');
   scheduleItem.className = 'schedule-item';
+  scheduleItem.dataset.id = id;
   
   // 日付をフォーマット
   const formattedDate = formatDate(date);
@@ -48,13 +215,20 @@ function createScheduleItem(title, memo, date) {
       <div class="schedule-title">${title}</div>
       ${memoHtml}
     </div>
-    <button class="delete-button">削除</button>
+    <div class="schedule-actions">
+      <button class="edit-button">編集</button>
+      <button class="delete-button">削除</button>
+    </div>
   `;
+  
+  // 編集ボタンのイベントリスナーを追加
+  const editButton = scheduleItem.querySelector('.edit-button');
+  editButton.addEventListener('click', enterEditMode);
   
   // 削除ボタンのイベントリスナーを追加
   const deleteButton = scheduleItem.querySelector('.delete-button');
   deleteButton.addEventListener('click', function() {
-    scheduleItem.remove();
+    deleteSchedule(id);
   });
   
   return scheduleItem;
@@ -70,52 +244,17 @@ function formatDate(dateString) {
   return `${year}年${month}月${day}日`;
 }
 
-// 日付順にスケジュールを挿入する関数
-function insertScheduleInOrder(schedulesList, newScheduleItem, newScheduleDate) {
-  const items = schedulesList.children;
-  let inserted = false;
-  
-  // 日付を比較して適切な位置に挿入
-  for (let i = 0; i < items.length; i++) {
-    const itemDateElement = items[i].querySelector('.schedule-date');
-    if (itemDateElement) {
-      const itemDateText = itemDateElement.textContent;
-      // 日本語形式の日付から年月日を抽出
-      const yearMatch = itemDateText.match(/(\d+)年/);
-      const monthMatch = itemDateText.match(/(\d+)月/);
-      const dayMatch = itemDateText.match(/(\d+)日/);
-      
-      if (yearMatch && monthMatch && dayMatch) {
-        const year = parseInt(yearMatch[1]);
-        const month = parseInt(monthMatch[1]) - 1; // JavaScriptの月は0始まり
-        const day = parseInt(dayMatch[1]);
-        
-        const itemDate = new Date(year, month, day);
-        const newDate = new Date(newScheduleDate);
-        
-        if (newDate < itemDate) {
-          schedulesList.insertBefore(newScheduleItem, items[i]);
-          inserted = true;
-          break;
-        }
-      }
-    }
-  }
-  
-  // リストの最後に追加
-  if (!inserted) {
-    schedulesList.appendChild(newScheduleItem);
-  }
-}
-
 // アプリの初期化関数
 function initializeApp() {
   // 今日の日付を初期値として設定
   const dateInput = document.getElementById('schedule-date');
   dateInput.value = new Date().toISOString().split('T')[0];
   
-  // スケジュール追加ボタンのクリックイベント
-  document.getElementById('add-schedule').addEventListener('click', addSchedule);
+  // スケジュール追加/更新ボタンのクリックイベント
+  document.getElementById('add-schedule').addEventListener('click', addOrUpdateSchedule);
+  
+  // 初期データの読み込み
+  loadSchedules();
 }
 
 document.addEventListener('DOMContentLoaded', function() {

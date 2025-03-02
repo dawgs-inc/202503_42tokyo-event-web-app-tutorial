@@ -94,6 +94,16 @@ button:hover {
   margin-top: 5px;
 }
 
+/* 編集モード用ボタン */
+.cancel-button {
+  background-color: #888;
+  margin-top: 10px;
+}
+
+.cancel-button:hover {
+  background-color: #777;
+}
+
 /* カレンダービュー */
 .calendar-view {
   margin-top: 20px;
@@ -143,6 +153,23 @@ button:hover {
   color: #666;
   font-size: 0.9em;
   font-style: italic;
+}
+
+/* スケジュールアクション */
+.schedule-actions {
+  display: flex;
+  gap: 5px;
+}
+
+.edit-button {
+  background-color: #f39c12;
+  padding: 5px 10px;
+  font-size: 14px;
+  border-radius: 4px;
+}
+
+.edit-button:hover {
+  background-color: #e67e22;
 }
 
 .delete-button {
