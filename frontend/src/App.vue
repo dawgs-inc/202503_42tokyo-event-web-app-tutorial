@@ -58,8 +58,10 @@ export default {
             method = 'PUT';
           }
           
-          // Ensure date is in YYYY-MM-DD format
-          const formattedDate = event_date.split('T')[0];
+          const dateObj = new Date(event_date);
+          // UTCで計算されるので、日本で使うときは一日加える
+          dateObj.setDate(dateObj.getDate() + 1);
+          const formattedDate = dateObj.toISOString().split('T')[0];
           
           // APIにスケジュールを追加/更新
           const response = await fetch(url, {
