@@ -123,20 +123,4 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // スケジュール追加ボタンのクリックイベント
   document.getElementById('add-schedule').addEventListener('click', addSchedule);
-  
-  // Enterキーでのスケジュール追加
-  const scheduleInput = document.getElementById('new-schedule');
-  const memoInput = document.getElementById('schedule-memo');
-  
-  scheduleInput.addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-      addSchedule();
-    }
-  });
-  
-  memoInput.addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-      addSchedule();
-    }
-  });
 });
