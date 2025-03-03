@@ -9,7 +9,7 @@ const PORT = 3000
 app.use(cors());
 app.use(express.json())
 
-// イベント追加API
+// イベント登録
 app.post('/api/events', (req, res) => {
   const { title, memo, event_date } = req.body;
   db.query('INSERT INTO events (title, memo, event_date) VALUES (?, ?, ?)', [title, memo, event_date], (error) => {
@@ -34,6 +34,24 @@ app.get('/api/events', (req, res) => {
   });
 });
 
+// 登録されている特定のイベント取得
+app.get('/api/events/:id', (req, res) => {
+  const eventId = parseInt(req.params.id, 10);
+
+  db.query('SELECT * FROM events WHERE id = ?', [eventId], (error, result) => {
+    if (error) {
+      console.error('Error fetching event:', error);
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+
+    if (result.length === 0) {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+
+    res.status(200).json(result[0]);
+  });
+});
+
 // イベント内容の変更
 app.put('/api/events/:id', (req, res) => {
   const eventId = req.params.id;
@@ -51,12 +69,17 @@ app.put('/api/events/:id', (req, res) => {
 // イベント削除
 app.delete('/api/events/:id', (req, res) => {
   const eventId = req.params.id;
-  db.query('DELETE FROM events WHERE id = ?', [eventId], (error) => {
+  db.query('DELETE FROM events WHERE id = ?', [eventId], (error, result) => {
     if (error) {
       console.log('Error deleting event:', error);
       res.status(500).json({ error: 'Internal Server Error' });
       return
     }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+
     res.status(200).json({ message: 'Event deleted successfully' });
   });
 });
