@@ -27,66 +27,65 @@
   </div>
 </template>
 
-<script>
-export default {
-  name: 'ScheduleForm',
-  props: {
-    editingSchedule: {
-      type: Object,
-      default: null
-    },
-    isEditing: {
-      type: Boolean,
-      default: false
-    }
+<script setup>
+import { ref, watch, defineProps, defineEmits } from 'vue';
+
+const props = defineProps({
+  editingSchedule: {
+    type: Object,
+    default: null
   },
-  data() {
-    return {
-      scheduleData: {
-        title: '',
-        memo: '',
-        event_date: new Date().toISOString().split('T')[0]
-      }
-    }
-  },
-  watch: {
-    editingSchedule(newVal) {
-      if (newVal) {
-        // Ensure we're only using the date portion (YYYY-MM-DD)
-        const dateOnly = newVal.event_date ? newVal.event_date.split('T')[0] : new Date().toISOString().split('T')[0];
-        
-        this.scheduleData = {
-          title: newVal.title,
-          memo: newVal.memo || '',
-          event_date: dateOnly
-        };
-      }
-    }
-  },
-  methods: {
-    submitForm() {
-      if (this.scheduleData.title && this.scheduleData.event_date) {
-        // Ensure we're only using the date portion (YYYY-MM-DD)
-        const formData = {
-          ...this.scheduleData,
-          event_date: this.scheduleData.event_date.split('T')[0]
-        };
-        
-        this.$emit('submit-schedule', formData);
-      }
-    },
-    cancelEdit() {
-      this.$emit('cancel-edit');
-      this.resetForm();
-    },
-    resetForm() {
-      // 入力欄をリセット
-      this.scheduleData = {
-        title: '',
-        memo: '',
-        event_date: new Date().toISOString().split('T')[0]
-      };
-    }
+  isEditing: {
+    type: Boolean,
+    default: false
   }
-}
+});
+
+const emit = defineEmits(['submit-schedule', 'cancel-edit']);
+
+const scheduleData = ref({
+  title: '',
+  memo: '',
+  event_date: new Date().toISOString().split('T')[0]
+});
+
+watch(() => props.editingSchedule, (newVal) => {
+  if (newVal) {
+    const dateOnly = newVal.event_date ? newVal.event_date.split('T')[0] : new Date().toISOString().split('T')[0];
+    
+    scheduleData.value = {
+      title: newVal.title,
+      memo: newVal.memo || '',
+      event_date: dateOnly
+    };
+  }
+}, { immediate: true });
+
+const submitForm = () => {
+  if (scheduleData.value.title && scheduleData.value.event_date) {
+    const formData = {
+      ...scheduleData.value,
+      event_date: scheduleData.value.event_date.split('T')[0]
+    };
+    
+    emit('submit-schedule', formData);
+  }
+};
+
+const resetForm = () => {
+  scheduleData.value = {
+    title: '',
+    memo: '',
+    event_date: new Date().toISOString().split('T')[0]
+  };
+};
+
+const cancelEdit = () => {
+  emit('cancel-edit');
+  resetForm();
+};
+
+defineExpose({
+  resetForm
+})
 </script>
