@@ -1,12 +1,11 @@
-const express = require('express');
-const cors = require('cors');
-const db = require('./db');
-require('dotenv').config();
+const express = require('express')
+const cors = require('cors')
+const db = require('./db')
+require('dotenv').config()
 
-const app = express();
-const PORT = 3000
+const app = express()
 
-app.use(cors());
+app.use(cors())
 app.use(express.json())
 
 // イベント登録
@@ -31,24 +30,6 @@ app.get('/api/events', (req, res) => {
       return
     }
     res.status(200).json(results);
-  });
-});
-
-// 登録されている特定のイベント取得
-app.get('/api/events/:id', (req, res) => {
-  const eventId = parseInt(req.params.id, 10);
-
-  db.query('SELECT * FROM events WHERE id = ?', [eventId], (error, result) => {
-    if (error) {
-      console.error('Error fetching event:', error);
-      return res.status(500).json({ error: 'Internal Server Error' });
-    }
-
-    if (result.length === 0) {
-      return res.status(404).json({ error: 'Event not found' });
-    }
-
-    res.status(200).json(result[0]);
   });
 });
 
@@ -85,6 +66,6 @@ app.delete('/api/events/:id', (req, res) => {
 });
 
 // サーバー起動
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+app.listen(3000, () => {
+  console.log(`Server running on http://localhost:3000`);
 });
