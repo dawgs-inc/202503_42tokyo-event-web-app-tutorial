@@ -6,31 +6,35 @@
         v-for="schedule in sortedSchedules" 
         :key="schedule.id" 
         :schedule="schedule"
-        @edit="$emit('edit', schedule)"
-        @delete="$emit('delete', schedule.id)"
+        @edit="handleEdit"
+        @delete="handleDelete"
       />
     </ul>
   </div>
 </template>
 
-<script>
+<script setup>
+import { computed, defineProps, defineEmits } from 'vue';
 import ScheduleItem from './ScheduleItem.vue';
 
-export default {
-  name: 'ScheduleList',
-  components: {
-    ScheduleItem
-  },
-  props: {
-    schedules: {
-      type: Array,
-      default: () => []
-    }
-  },
-  computed: {
-    sortedSchedules() {
-      return [...this.schedules].sort((a, b) => new Date(a.event_date) - new Date(b.event_date));
-    }
+const props = defineProps({
+  schedules: {
+    type: Array,
+    default: () => []
   }
-}
+});
+
+const emit = defineEmits(['edit', 'delete']);
+
+const sortedSchedules = computed(() => {
+  return [...props.schedules].sort((a, b) => new Date(a.event_date) - new Date(b.event_date));
+});
+
+const handleEdit = (schedule) => {
+  emit('edit', schedule);
+};
+
+const handleDelete = (id) => {
+  emit('delete', id);
+};
 </script>
