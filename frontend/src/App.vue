@@ -90,7 +90,7 @@ const addOrUpdateSchedule = async (scheduleData) => {
 const enterEditMode = (schedule) => {
   const cleanSchedule = {
     ...schedule,
-    event_date: schedule.event_date.split('T')[0]
+    event_date: schedule.event_date
   };
   
   editingEventId.value = schedule.id;

@@ -64,8 +64,7 @@ watch(() => props.editingSchedule, (newVal) => {
 const submitForm = () => {
   if (scheduleData.value.title && scheduleData.value.event_date) {
     const formData = {
-      ...scheduleData.value,
-      event_date: scheduleData.value.event_date.split('T')[0]
+      ...scheduleData.value
     };
     
     emit('submit-schedule', formData);
